@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardHeader, CardTitle, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { PlusIcon, TrashIcon } from "lucide-react";
+import { PlusIcon, TrashIcon, Save, Book } from "lucide-react";
 import {
   Accordion,
   AccordionContent,
@@ -11,11 +11,21 @@ import {
 } from "@/components/ui/accordion";
 
 const App = () => {
+  const defaultExamples = {
+    "Simple Ascending": [1, 2, 3, 4, 5],
+    "Mixed Sequence": [5, 2, 8, 6, 3, 6, 9, 7],
+    "Complex Pattern": [10, 22, 9, 33, 21, 50, 41, 60, 80],
+    "Repeated Numbers": [3, 3, 3, 4, 4, 5, 5, 6],
+  };
+
   const [sequence, setSequence] = useState([5, 2, 8, 6, 3, 6, 9, 7]);
   const [currentStep, setCurrentStep] = useState(0);
   const [steps, setSteps] = useState([]);
   const [lisResult, setLisResult] = useState([]);
   const [newNumber, setNewNumber] = useState("");
+  const [examples, setExamples] = useState(defaultExamples);
+  const [newExampleName, setNewExampleName] = useState("");
+  const [isAddingExample, setIsAddingExample] = useState(false);
 
   const findLIS = (arr) => {
     const n = arr.length;
@@ -97,6 +107,30 @@ const App = () => {
     setSequence(sequence.filter((_, index) => index !== indexToRemove));
   };
 
+  const loadExample = (exampleName) => {
+    if (examples[exampleName]) {
+      setSequence(examples[exampleName]);
+      setCurrentStep(0);
+    }
+  };
+
+  const saveCurrentAsExample = () => {
+    if (newExampleName.trim() !== "") {
+      setExamples({
+        ...examples,
+        [newExampleName]: [...sequence],
+      });
+      setNewExampleName("");
+      setIsAddingExample(false);
+    }
+  };
+
+  const deleteExample = (exampleName) => {
+    const newExamples = { ...examples };
+    delete newExamples[exampleName];
+    setExamples(newExamples);
+  };
+
   const renderCurrentStep = () => {
     const step = steps[currentStep];
     if (!step) return null;
@@ -173,6 +207,76 @@ const App = () => {
       </div>
     );
   };
+
+  const renderExamplesSection = () => (
+    <div className="mb-6">
+      <div className="flex items-center justify-between mb-3">
+        <label className="text-lg font-medium text-neutral-700">
+          Preset Examples
+        </label>
+        <Button
+          variant="outline"
+          onClick={() => setIsAddingExample(!isAddingExample)}
+          className="text-neutral-600 hover:bg-neutral-100"
+        >
+          <Save className="w-4 h-4 mr-2" />
+          Save Current
+        </Button>
+      </div>
+
+      {isAddingExample && (
+        <div className="flex space-x-2 mb-3">
+          <Input
+            value={newExampleName}
+            onChange={(e) => setNewExampleName(e.target.value)}
+            placeholder="Enter example name"
+            className="flex-grow"
+          />
+          <Button
+            onClick={saveCurrentAsExample}
+            className="bg-neutral-700 text-white hover:bg-neutral-600"
+          >
+            Save
+          </Button>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {Object.entries(examples).map(([name, seq]) => (
+          <div
+            key={name}
+            className="flex items-center justify-between p-3 bg-neutral-50 rounded-lg border border-neutral-200"
+          >
+            <div className="flex-1">
+              <div className="font-medium text-neutral-700 mb-1">{name}</div>
+              <div className="text-neutral-500 text-sm">[{seq.join(", ")}]</div>
+            </div>
+            <div className="flex space-x-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => loadExample(name)}
+                className="text-neutral-600 hover:bg-neutral-100"
+              >
+                <Book className="w-4 h-4 mr-2" />
+                Load
+              </Button>
+              {name in defaultExamples ? null : (
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => deleteExample(name)}
+                  className="text-red-600 hover:bg-red-50"
+                >
+                  <TrashIcon className="w-4 h-4" />
+                </Button>
+              )}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
 
   return (
     <div className="max-w-4xl mx-auto space-y-6 p-4">
@@ -277,29 +381,12 @@ const App = () => {
             </AccordionItem>
           </Accordion>
 
+          {renderExamplesSection()}
+
           <div className="mb-6">
             <label className="block mb-3 text-lg font-medium text-neutral-700">
               Input Sequence
             </label>
-            <div className="flex items-center space-x-2 mb-3">
-              <div className="flex space-x-2 flex-wrap">
-                {sequence.map((num, index) => (
-                  <div key={index} className="flex items-center space-x-1 mb-2">
-                    <div className="w-12 h-10 flex items-center justify-center bg-neutral-100 rounded border border-neutral-300">
-                      {num}
-                    </div>
-                    <Button
-                      variant="outline"
-                      size="icon"
-                      onClick={() => removeNumber(index)}
-                      className="w-8 h-8 text-neutral-600 hover:bg-neutral-100"
-                    >
-                      <TrashIcon className="w-4 h-4" />
-                    </Button>
-                  </div>
-                ))}
-              </div>
-            </div>
             <div className="flex space-x-2">
               <Input
                 type="number"
@@ -355,6 +442,9 @@ const App = () => {
                   {num}
                 </div>
               ))}
+            </div>
+            <div className="mt-3 text-neutral-600">
+              Length: {lisResult.length}
             </div>
           </div>
         </CardContent>
